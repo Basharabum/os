@@ -1,29 +1,32 @@
 #include "stdafx.h"
-#include <ctime>
-#include <deque>
-
 #include "CacheRecord.h"
 #include "SetOfCacheRecord.h"
 
-#define DEBUG 1						//запись результатов работы в файл result.txt
-#define SAVE_CODE_TO_FILE 0	//сохранить сгенерированную последовательность видов кода в файл codegenerator.txt
-#define LOAD_CODE_FROM_FILE 1		//загрузить последовательность видов кода из файла codegenerator.txt
+#define DEBUG 1						//запись результатов работы в файл result.txt или result2.txt
 
-#define MAIN_MEMORY_SIZE 1024		//размер основной памяти
-#define CACHE_SIZE 128				//число записей в кэше
-#define CACHE_SETS_COUNT 16			//число групп
+#define SAVE_CODE_TO_FILE 1         //сохранить сгенерированную последовательность видов кода в файл codegenerator.txt
+#define LOAD_CODE_FROM_FILE 0		//загрузить последовательность видов кода из файла codegenerator.txt
 
-#define SPATIAL_LOCALITY_LENGTH 0	//длина пространственной локальности
+//128 64
+//ПАРАМЕТРЫ МОДЕЛИ:
 
-#define LINEAR_CODE_PERCENT 24		//процент линейного кода
-#define LINEAR_CODE_DURATION 20     //средняя продолжительность линейного кода (в итерациях)
+#define MAIN_MEMORY_SIZE 1024			//размер основной памяти
+#define CACHE_SIZE 128					//число записей в кэше
+#define CACHE_SETS_COUNT 16				//число групп
 
-#define CYCLIC_CODE_PERCENT 56		//процент циклического кода
-#define CYCLIC_ITERATION_COUNT 10   //среднее количество итераций в цикле
-#define CYCLIC_INSTRUCTION_COUNT 5  //среднее количество инструкций в цикле
+#define SPATIAL_LOCALITY_LENGTH 0		//длина пространственной локальности
 
-#define FUNCTION_CODE_PERCENT 20    //процент кода в функциях
-#define FUNCTION_INSTRUCTION_COUNT 20 //среднее количество инструкций в функции
+#define LINEAR_CODE_PERCENT 24			//процент линейного кода
+#define LINEAR_CODE_DURATION 20			//средняя продолжительность линейного кода (в итерациях)
+
+#define CYCLIC_CODE_PERCENT 56			//процент циклического кода
+#define CYCLIC_ITERATION_COUNT 10		//среднее количество итераций в цикле
+#define CYCLIC_INSTRUCTION_COUNT 5		//среднее количество инструкций в цикле
+
+#define FUNCTION_CODE_PERCENT 20		//процент кода в функциях
+#define FUNCTION_INSTRUCTION_COUNT 20   //среднее количество инструкций в функции
+
+
 
 //Функция возвращает степень двойки числа 
 int getPowerOfTwo(int num) {
@@ -41,6 +44,8 @@ int getPowerOfTwo(int num) {
 //Функция проверяет наличие адреса в кэш;
 bool CheckCache(string address, SetOfCacheRecord* arrayofSets) {
 
+	if (address == "")
+		return false;
 	bool inCache = false;
 	int numberGroupRankIndex = address.length() - getPowerOfTwo(CACHE_SETS_COUNT);
 	string numberGroupRankStr = address.substr(numberGroupRankIndex, getPowerOfTwo(CACHE_SETS_COUNT)); //подстрока адреса, содержащая номер группы
@@ -49,6 +54,7 @@ bool CheckCache(string address, SetOfCacheRecord* arrayofSets) {
 	for (int i = 0; i < CACHE_SETS_COUNT; i++) {
 		if (arrayofSets[i].getcacheSetNumber() == numberGroupRankStr) {
 			inCache = arrayofSets[i].findAddressInCache(addressTag);
+			return inCache;
 		}
 	}
 	return inCache;
@@ -57,6 +63,8 @@ bool CheckCache(string address, SetOfCacheRecord* arrayofSets) {
 //Функция добавляет адрес в кэш
 bool AddToCache(string address, SetOfCacheRecord* arrayofSets) {
 
+	if (address == "")
+		return false;
 	int numberGroupRankIndex = address.length() - getPowerOfTwo(CACHE_SETS_COUNT);
 
 	string numberGroupRankStr = address.substr(numberGroupRankIndex, getPowerOfTwo(CACHE_SETS_COUNT)); //подстрока адреса, содержащая номер группы
@@ -80,7 +88,6 @@ string intToBinaryString(int intNumber) {
 		tmp = '0' + intNumber % 2;
 		binNumber = tmp + binNumber;
 		intNumber /= 2;
-
 	}
 
 	while (binNumber.length() < 10)
@@ -89,55 +96,54 @@ string intToBinaryString(int intNumber) {
 	return binNumber;
 }
 
-
 //Функция генерирует линейный код
-int linCode(int currentAddress, SetOfCacheRecord* arrayofSets, ostream &fout,ostream &codefileout, int &CacheHitCounter, int &CheckCounter) {
+int linCode(int currentAddress, SetOfCacheRecord* arrayofSets, ostream &fout, ostream &codefileout, int &CacheHitCounter, int &CheckCounter) {
 	//генерация числа инструкций
 	int randomNumber = rand() % LINEAR_CODE_DURATION + 1;
-	
-	if (DEBUG){
+
+	if (DEBUG) {
 		fout << "-> Линейный код с количеством инструкций: " << randomNumber << endl << endl;
-		
 	}
-	if (SAVE_CODE_TO_FILE){
-		codefileout << "L " << randomNumber << endl;
-	}
-	for (int i = 0; i < randomNumber; i++){
+
+	for (int i = 0; i < randomNumber; i++) {
 
 		string BinaryAddress = intToBinaryString(currentAddress);
 		bool inCache = CheckCache(BinaryAddress, arrayofSets);
-		
-		if (DEBUG){
+
+		if (DEBUG) {
 			fout << "    проверка: " << currentAddress << " " << intToBinaryString(currentAddress) << " ";
+		}
+		if (SAVE_CODE_TO_FILE) {
+			codefileout << BinaryAddress << endl;
 		}
 		if (inCache == true) {
 			CacheHitCounter++;
 			CheckCounter++;
-			if (DEBUG){
+			if (DEBUG) {
 				fout << "ПОПАДАНИЕ" << endl;
 			}
 		}
 		else {
-			if (DEBUG){
+			if (DEBUG) {
 				fout << "ПРОМАХ" << " ";
 			}
 			CheckCounter++;
 			if (AddToCache(BinaryAddress, arrayofSets)) {
-				if (DEBUG){
+				if (DEBUG) {
 					fout << " Добавлен в кэш" << endl;
 				}
 				//Если адрес добавлен в кэш, то добавить следующие за ним SPATIAL_LOCALITY_LENGTH адресов
 				for (int i = 1; i < SPATIAL_LOCALITY_LENGTH + 1; i++) {
 					BinaryAddress = intToBinaryString(currentAddress + i);
 					if (AddToCache(BinaryAddress, arrayofSets)) {
-						if (DEBUG){
+						if (DEBUG) {
 							fout << "      Адрес " << currentAddress + i << " " << BinaryAddress << " Добавлен в кэш благодаря свойству пространственной локальности" << endl;
 						}
 					}
 				}
 			}
 			else {
-				if (DEBUG){
+				if (DEBUG) {
 					fout << " НЕ добавлен в кэш" << endl;
 				}
 			}
@@ -145,7 +151,7 @@ int linCode(int currentAddress, SetOfCacheRecord* arrayofSets, ostream &fout,ost
 		currentAddress++;
 		inCache = false;
 	}
-	if (DEBUG){
+	if (DEBUG) {
 		fout << "<- Конец линейного кода" << endl;
 	}
 	return currentAddress;
@@ -157,24 +163,25 @@ int cycleCode(int currentAddress, SetOfCacheRecord* arrayofSets, ostream &fout, 
 	int iterationCount = rand() % CYCLIC_ITERATION_COUNT + 1;		//генерация количества итераций цикла
 	int instructionCount = rand() % CYCLIC_INSTRUCTION_COUNT + 1;	//генерация количества инструкий цикла
 
-	if (DEBUG){
+	if (DEBUG) {
 		fout << "-> Циклический код с количеством итераций: " << iterationCount << endl;
 		fout << "   и количеством инструкций: " << instructionCount << endl << endl;
 	}
-	if (SAVE_CODE_TO_FILE){
+	/*if (SAVE_CODE_TO_FILE) {
 		codefileout << "C " << iterationCount << " " << instructionCount << endl;
-	}
+	}*/
 	int firstAddressInCycle = currentAddress;
 	int lastAddressInCycle = currentAddress;
 	bool inCache = false;
 
-		
-	for (int i = 0; i < iterationCount; i++){
-		for (int j = 0; j < instructionCount; j++){
+	for (int i = 0; i < iterationCount; i++) {
+		for (int j = 0; j < instructionCount; j++) {
 
 			string BinaryAddress = intToBinaryString(currentAddress);
 			inCache = CheckCache(BinaryAddress, arrayofSets);
-
+			if (SAVE_CODE_TO_FILE) {
+				codefileout << BinaryAddress << endl;
+			}
 			if (DEBUG) {
 				fout << "    проверка: " << currentAddress << " " << intToBinaryString(currentAddress) << " ";
 			}
@@ -182,31 +189,31 @@ int cycleCode(int currentAddress, SetOfCacheRecord* arrayofSets, ostream &fout, 
 
 				CacheHitCounter++;
 				CheckCounter++;
-				if (DEBUG){
+				if (DEBUG) {
 					fout << "ПОПАДАНИЕ" << endl;
 				}
 			}
 			else {
-				if (DEBUG){
+				if (DEBUG) {
 					fout << "ПРОМАХ" << " ";
 				}
 				CheckCounter++;
 				if (AddToCache(BinaryAddress, arrayofSets)) {
-					if (DEBUG){
+					if (DEBUG) {
 						fout << " Добавлен в кэш" << endl;
 					}
 					for (int i = 1; i < SPATIAL_LOCALITY_LENGTH + 1; i++)
 					{
 						BinaryAddress = intToBinaryString(currentAddress + i);
 						if (AddToCache(BinaryAddress, arrayofSets)) {
-							if (DEBUG){
+							if (DEBUG) {
 								fout << "      Адрес " << currentAddress + i << " " << BinaryAddress << " Добавлен в кэш благодаря свойству пространственной локальности" << endl;
 							}
 						}
 					}
 				}
 				else {
-					if (DEBUG){
+					if (DEBUG) {
 						fout << " НЕ добавлен в кэш" << endl;
 					}
 				}
@@ -224,7 +231,7 @@ int cycleCode(int currentAddress, SetOfCacheRecord* arrayofSets, ostream &fout, 
 }
 
 //Функция генерирует функциональный код
-int funcCode(int currentAddress, SetOfCacheRecord* arrayofSets, ostream &fout,ostream &codefileout, int &CacheHitCounter, int &CheckCounter){
+int funcCode(int currentAddress, SetOfCacheRecord* arrayofSets, ostream &fout, ostream &codefileout, int &CacheHitCounter, int &CheckCounter) {
 
 	int endOfFunctionAddress = 80;
 	bool linearCode = false;
@@ -232,16 +239,11 @@ int funcCode(int currentAddress, SetOfCacheRecord* arrayofSets, ostream &fout,os
 	bool functionCode = false;
 	int randomNumber = rand() % FUNCTION_INSTRUCTION_COUNT + 1;//количество инструкций в функции
 	int lastAddress = currentAddress + randomNumber;
-	
-	if (DEBUG){
+
+	if (DEBUG) {
 		fout << "[ Функция с количеством инструкций: " << randomNumber << " func]" << endl << endl;
 	}
-	if (SAVE_CODE_TO_FILE) {
-		codefileout << "F " << randomNumber << endl;
-	}
-	
-	
-	
+
 	for (int i = 0; i < randomNumber; i++) {
 		while (currentAddress < lastAddress) {
 			//определение вида кода
@@ -256,39 +258,36 @@ int funcCode(int currentAddress, SetOfCacheRecord* arrayofSets, ostream &fout,os
 
 			if (linearCode) {
 
-				currentAddress = linCode(currentAddress, arrayofSets, fout,codefileout, CacheHitCounter, CheckCounter);
+				currentAddress = linCode(currentAddress, arrayofSets, fout, codefileout, CacheHitCounter, CheckCounter);
 				linearCode = false; // конец линейного кода
 
-				if (DEBUG){
+				if (DEBUG) {
 					fout << endl << endl;
 				}
 			}
 			//если код получился циклическим
 			if (cycicCode) {
 
-				currentAddress = cycleCode(currentAddress, arrayofSets, fout,codefileout, CacheHitCounter, CheckCounter);
+				currentAddress = cycleCode(currentAddress, arrayofSets, fout, codefileout, CacheHitCounter, CheckCounter);
 				cycicCode = false; // конец циклического кода
-				if (DEBUG){
+				if (DEBUG) {
 					fout << endl << endl;
 				}
-
 			}
 			//если код получился функциональным
 			if (functionCode) {
-
 				int entryAddress = currentAddress; //адрес входа в функцию
-				int endOfFunctionAddress = funcCode(currentAddress, arrayofSets, fout,codefileout, CacheHitCounter, CheckCounter);
+				int endOfFunctionAddress = funcCode(currentAddress, arrayofSets, fout, codefileout, CacheHitCounter, CheckCounter);
 				currentAddress = entryAddress + 1;
 				functionCode = false;
 			}
 		}
 	}
-	if (DEBUG){
+	if (DEBUG) {
 		fout << "<- Конец функции:________________ " << randomNumber << endl << endl;
 	}
 	functionCode = false;
 	return endOfFunctionAddress;
-
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -297,44 +296,18 @@ int _tmain(int argc, _TCHAR* argv[])
 	setlocale(LC_CTYPE, "Russian");
 	ofstream codefileout;
 	ifstream codefilein;
-	ofstream fout("result.txt");
-	if (SAVE_CODE_TO_FILE){
+	ofstream fout;
+	/*if (!LOAD_CODE_FROM_FILE) {
+		ofstream fout("result.txt");
+	}
+	else {
+		ofstream fout("result2.txt");
+	}*/
+	if (SAVE_CODE_TO_FILE) {
 		//ofstream codefileout("codegenerator.txt");
 		codefileout.open("codegenerator.txt");
 	}
-
-	if (LOAD_CODE_FROM_FILE) {
-	
-		codefilein.open("codegenerator.txt");
-		string str;
-		int countOfLinesInFile = 0;
-
-		while (!codefilein.eof()) {
-			getline(codefilein,str);
-			countOfLinesInFile++;
-		}
-	//	cout << countOfLinesInFile << endl;
-		//countOfLinesInFile = 509;
-		string* arrayOfCodeTypes = new string[countOfLinesInFile];
-		/*for (int i = 0; i < countOfLinesInFile; i++){
-			arrayOfCodeTypes[i] = " ";
-		}*/
-
-		int iter = 0;
-		codefilein.seekg(0, codefilein.beg);
-		while (!codefilein.eof())
-		{
-			getline(codefilein,arrayOfCodeTypes[iter]);
-			iter++;
-		}
-
-		for (int i = 0; i < countOfLinesInFile; i++){
-			cout << arrayOfCodeTypes[i] << endl;
-		
-		}
-	}
-
-	if (DEBUG){
+	if (DEBUG) {
 
 		fout << "размер основной памяти: " << MAIN_MEMORY_SIZE << endl;
 		fout << "число записей в кэше: " << CACHE_SIZE << endl;
@@ -349,7 +322,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		fout << endl << endl;
 	}
-
+	if (CACHE_SIZE < CACHE_SETS_COUNT) {
+		cerr << "Размер кэша должен быть больше, чем количество групп" << endl;
+		return 0;
+	}
 	int countOfRecordsInSet = CACHE_SIZE / CACHE_SETS_COUNT;
 	int numberGroupRankIndex = 0;
 	string numberGroupRankStr = "";
@@ -383,74 +359,134 @@ int _tmain(int argc, _TCHAR* argv[])
 	int randomNumber2 = 0;
 
 	char typeOfCode[7];
-	while (currentAddress < MAIN_MEMORY_SIZE) {
-		//определение вида кода
 
-		if (LOAD_CODE_FROM_FILE) {
-			codefilein.getline(typeOfCode, 7);
-			//cout << typeOfCode << endl;
-			if (typeOfCode[0] == 'L'){
-				linearСode = true;
-				//cout << "Линейный код" << endl;
-			}
-			else if (typeOfCode[0] == 'C'){
-				cyclicСode = true;
-				//cout << "Циклический код" << endl;
-			}
-			else
-			{
-				functionsCode = true;
-				//cout << "Функциональный код" << endl;
-			}
-		
-		}
-		else {
-			randomNumber = rand() % 100;
+	//Считывание адресов из файла
+	if (LOAD_CODE_FROM_FILE) {
 
-			if (randomNumber < LINEAR_CODE_PERCENT)
-				linearСode = true;
-			else if (randomNumber < LINEAR_CODE_PERCENT + CYCLIC_CODE_PERCENT)
-				cyclicСode = true;
-			else
-				functionsCode = true;
-		}
-		//если код получился линейным
-		if (linearСode) {
+		codefilein.open("codegenerator.txt");
+		fout.open("result2.txt");
+		string BinaryAddress;
 
-			currentAddress = linCode(currentAddress, arrayofSets, fout, codefileout,CacheHitCounter, CheckCounter);
-			linearСode = false; // конец линейного кода
-
-			if (DEBUG){
-				fout << endl << endl;
-			}
-		}
-
-		//если код получился циклическим
-		if (cyclicСode) {
-
-			currentAddress = cycleCode(currentAddress, arrayofSets, fout,codefileout, CacheHitCounter, CheckCounter);
-			cyclicСode = false; // конец циклического кода
-			if (DEBUG){
-				fout << endl << endl;
-			}
-
-		}
-
-		if (functionsCode) {
+		while (!codefilein.eof()) {
+			getline(codefilein, BinaryAddress);
+			if (BinaryAddress == "") continue;
+			bool inCache = CheckCache(BinaryAddress, arrayofSets);
 			
-			int entryAddress = currentAddress; //адрес входа в функцию
+			int intAddr = std::stoi(BinaryAddress, nullptr, 2);
+			
+			if (DEBUG) {
+				//fout << "    проверка: " << currentAddress << " " << intToBinaryString(currentAddress) << " ";
+				fout << "Проверка: "<<intAddr<<" "<< BinaryAddress << " ";
+			}
 
-			int endOfFunctionAddress = funcCode(currentAddress, arrayofSets, fout,codefileout, CacheHitCounter, CheckCounter);
+			if (inCache == true) {
+				CacheHitCounter++;
+				CheckCounter++;
+				if (DEBUG) {
+					fout << "ПОПАДАНИЕ" << endl;
+				}
+			}
+			else {
+				if (DEBUG) {
+					fout << "ПРОМАХ" << " ";
+				}
+				CheckCounter++;
+				if (AddToCache(BinaryAddress, arrayofSets)) {
+					if (DEBUG) {
+						fout << " Добавлен в кэш" << endl;
+					}
+					//Если адрес добавлен в кэш, то добавить следующие за ним SPATIAL_LOCALITY_LENGTH адресов
+					for (int i = 1; i < SPATIAL_LOCALITY_LENGTH + 1; i++) {
+						BinaryAddress = intToBinaryString(intAddr + i);
+						if (AddToCache(BinaryAddress, arrayofSets)) {
+							if (DEBUG) {
+								fout << "      Адрес " << currentAddress + i << " " << BinaryAddress << " Добавлен в кэш благодаря свойству пространственной локальности" << endl;
+							}
+						}
+					}
+				}
+				else {
+					if (DEBUG) {
+						fout << " НЕ добавлен в кэш" << endl;
+					}
+				}
+			}
+			currentAddress++;
+			inCache = false;
 
-			currentAddress = entryAddress + 1;
-			functionsCode = false;
-			if (DEBUG){
-				fout << endl << endl;
+		}
+	}
+	else {
+		fout.open("result.txt");
+		//Генерирование адресов
+		while (currentAddress < MAIN_MEMORY_SIZE) {
+			//определение вида кода
+
+			if (LOAD_CODE_FROM_FILE) {
+				codefilein.getline(typeOfCode, 7);
+				//cout << typeOfCode << endl;
+				if (typeOfCode[0] == 'L') {
+					linearСode = true;
+					//cout << "Линейный код" << endl;
+				}
+				else if (typeOfCode[0] == 'C') {
+					cyclicСode = true;
+					//cout << "Циклический код" << endl;
+				}
+				else
+				{
+					functionsCode = true;
+					//cout << "Функциональный код" << endl;
+				}
+
+			}
+			else {
+				randomNumber = rand() % 100;
+
+				if (randomNumber < LINEAR_CODE_PERCENT)
+					linearСode = true;
+				else if (randomNumber < LINEAR_CODE_PERCENT + CYCLIC_CODE_PERCENT)
+					cyclicСode = true;
+				else
+					functionsCode = true;
+			}
+			//если код получился линейным
+			if (linearСode) {
+
+				currentAddress = linCode(currentAddress, arrayofSets, fout, codefileout, CacheHitCounter, CheckCounter);
+				linearСode = false; // конец линейного кода
+
+				if (DEBUG) {
+					fout << endl << endl;
+				}
+			}
+
+			//если код получился циклическим
+			if (cyclicСode) {
+
+				currentAddress = cycleCode(currentAddress, arrayofSets, fout, codefileout, CacheHitCounter, CheckCounter);
+				cyclicСode = false; // конец циклического кода
+				if (DEBUG) {
+					fout << endl << endl;
+				}
+
+			}
+
+			if (functionsCode) {
+
+				int entryAddress = currentAddress; //адрес входа в функцию
+
+				int endOfFunctionAddress = funcCode(currentAddress, arrayofSets, fout, codefileout, CacheHitCounter, CheckCounter);
+
+				currentAddress = entryAddress + 1;
+				functionsCode = false;
+				if (DEBUG) {
+					fout << endl << endl;
+				}
 			}
 		}
 	}
-
-	if (DEBUG){
+	if (DEBUG) {
 		fout << "Количество попаданий: " << CacheHitCounter << endl << endl;
 		fout << "Процент попаданий: " << (CacheHitCounter * 100) / CheckCounter << endl;
 	}
@@ -459,14 +495,16 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	fout << "Адреса в Кэше: " << endl;
 
-	for (int i = 0; i < CACHE_SETS_COUNT; i++){
-		for (int j = 0; j < arrayofSets[i].getcurrentcacheRecordsCount(); j++){
+	for (int i = 0; i < CACHE_SETS_COUNT; i++) {
+		for (int j = 0; j < arrayofSets[i].getcurrentcacheRecordsCount(); j++) {
 			fout << arrayofSets[i].getElemOfDeque(j)->getTag() << arrayofSets[i].getcacheSetNumber() << endl;
 		}
 		fout << endl;
 	}
 
-    codefilein.close();
+	codefilein.close();
+	codefileout.close();
+	fout.close();
 	return 0;
 }
 
