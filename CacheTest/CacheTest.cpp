@@ -12,7 +12,7 @@
 
 #define MAIN_MEMORY_SIZE 1024			//размер основной памяти
 #define CACHE_SIZE 128					//число записей в кэше
-#define CACHE_SETS_COUNT 16				//число групп
+#define CACHE_SETS_COUNT 16			//число групп
 
 #define SPATIAL_LOCALITY_LENGTH 0		//длина пространственной локальности
 

@@ -12,14 +12,14 @@ class SetOfCacheRecord {
 	int currentcacheRecordsCount;	   //текущее количество записей в группе
 	int cacheRecordsCount;			   //максимальное количество записей в группе
 	deque<CacheRecord*> dequeOfCacheRecords;//Очередь из записей группы
-	//thread* threadArray; //Массив потоков
+	thread* threadArray;
 	bool recordFound; //запись найдена в группе
 	string tagForSearch;
 	
 public:
 	
 	SetOfCacheRecord() {
-		cacheSetNumber = ""; currentcacheRecordsCount = 0; cacheRecordsCount = 0; /*arrayOfCacheRecords = 0; */ recordFound = false; tagForSearch = ""; 
+		cacheSetNumber = ""; currentcacheRecordsCount = 0; cacheRecordsCount = 0; /*arrayOfCacheRecords = 0; */ recordFound = false; tagForSearch = "22"; 
 		
 	}
 	SetOfCacheRecord(string thecacheSetNumber, int thecurrentcacheRecordsCount, int thecacheRecordsCount, bool theRecordFound, string theTagForSearch = ""){
@@ -28,24 +28,26 @@ public:
 		currentcacheRecordsCount = thecurrentcacheRecordsCount;
 		cacheRecordsCount = thecacheRecordsCount;
 		recordFound = theRecordFound;
-		/*thread* threadArray = new thread[currentcacheRecordsCount];
-		for (int i = 0; i < currentcacheRecordsCount; i++) {
-			threadArray[i] = thread(&SetOfCacheRecord::findInThreadsIndex, this, i);
+		/*thread* threadArray = new thread[cacheRecordsCount]; //Массив потоков для поиска тега в группе
+
+		for (int i = 0; i < cacheRecordsCount; i++) {
+			threadArray[i] = std::thread(&SetOfCacheRecord::findInThreadsIndex, this, i);
 		}*/
 	}
 
 	void setCacheSetNumber(string theNumber){ cacheSetNumber = theNumber; }
 	void setCurrentCacheRecordsCount(int theCurrentCacheRecordsCount){ currentcacheRecordsCount = theCurrentCacheRecordsCount; }
-	void setCacheRecordsCount(int theRecordsCount){ cacheRecordsCount = theRecordsCount; }
-	void setRecordFound(bool theRecordFound){ recordFound = theRecordFound; }
-	/*void setTagForSearch(string theTagForSearch) { tagForSearch = theTagForSearch; }
-	void setThreadArray(int  currentcacheRecordsCount) {
-		thread* threadArray = new thread[currentcacheRecordsCount];
-		for (int i = 0; i < currentcacheRecordsCount; i++) {
-			threadArray[i] = thread(&SetOfCacheRecord::findInThreadsIndex, this, i);
-		}
-	}*/
+	void setCacheRecordsCount(int theRecordsCount){ 
+		cacheRecordsCount = theRecordsCount;
+	thread* threadArray = new thread[cacheRecordsCount]; //Массив потоков для поиска тега в группе
 
+	for (int i = 0; i <cacheRecordsCount; i++) {
+		threadArray[i] = std::thread(&SetOfCacheRecord::findInThreadsIndex, this, i);
+	}
+	
+	}
+	void setRecordFound(bool theRecordFound){ recordFound = theRecordFound; }
+	
 	string getcacheSetNumber(){ return cacheSetNumber; }
 	int getcurrentcacheRecordsCount(){ return currentcacheRecordsCount; }
 	int getcacheRecordsCount(){ return cacheRecordsCount; }
@@ -90,13 +92,14 @@ public:
 	
 
 	//Функция потока, сравнивающая текущий тег адреса с тегом в группе
-	void findInThreadsIndex(string tag, int index) {
+	void findInThreadsIndex(int index) {
+		if (index < currentcacheRecordsCount){
+			if (dequeOfCacheRecords[index]->getTag() == tagForSearch) {
+				recordFound = true;
+				dequeOfCacheRecords[index]->setReferBit(1);
 
-		if (dequeOfCacheRecords[index]->getTag() == tag) {
-			recordFound = true;
-			dequeOfCacheRecords[index]->setReferBit(1);
-			
-			//cout << "поиск..." << endl;
+				//cout << "поиск..." << endl;
+			}
 		}
 			
 	}
@@ -108,7 +111,8 @@ public:
 		
 		if (dequeOfCacheRecords.size() == 0)
 			return false;
-	
+		tagForSearch = tag;
+		currentcacheRecordsCount = dequeOfCacheRecords.size();
 		/*currentcacheRecordsCount = dequeOfCacheRecords.size();
 		thread* threadArray = new thread[currentcacheRecordsCount]; //Массив потоков для поиска тега в группе
 		
@@ -122,21 +126,29 @@ public:
 				
 			}
 		}
+	
+				
 		
-		
-		
-		result = recordFound; *///1thmethod
+		result = recordFound;*/ //1thmethod
 
-		for (int i = 0; i < dequeOfCacheRecords.size();i++)
+		/*for (int i = 0; i < dequeOfCacheRecords.size();i++)
 		if (dequeOfCacheRecords[i]->getTag() == tag) {
 			recordFound = true;
 			dequeOfCacheRecords[i]->setReferBit(1);
 			return true;
-		}//normal method
-		
-		//recordFound = false; //1th method
-		return false;// normal method
-	   // return result; //1th method
+		}*///normal method
+
+		for (int i = 0; i < currentcacheRecordsCount - 1; i++) {
+
+			if (threadArray[i].joinable()) {
+				threadArray[i].join();
+
+			}
+		}
+		result = recordFound;
+		recordFound = false; //1th method
+		//return false;// normal method
+	    return result; //1th method
 
 		
 
