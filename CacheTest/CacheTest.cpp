@@ -297,14 +297,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	ofstream codefileout;
 	ifstream codefilein;
 	ofstream fout;
-	/*if (!LOAD_CODE_FROM_FILE) {
-		ofstream fout("result.txt");
-	}
-	else {
-		ofstream fout("result2.txt");
-	}*/
+	
 	if (SAVE_CODE_TO_FILE) {
-		//ofstream codefileout("codegenerator.txt");
 		codefileout.open("codegenerator.txt");
 	}
 	if (DEBUG) {
@@ -350,11 +344,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	bool cyclicСode = false;
 	bool functionsCode = false;
 
-	int lastAddress = 0; //последний адрес
-	int currentAddress = 0; //текущее значение адреса
-	bool inCache = false; //попадание записи в кэш
-	int CacheHitCounter = 0; //счетчик попаданий в кэш
-	int CheckCounter = 0; //счетчик проверок
+	int lastAddress = 0;		//последний адрес
+	int currentAddress = 0;		//текущее значение адреса
+	bool inCache = false;		//попадание записи в кэш
+	int CacheHitCounter = 0;	//счетчик попаданий в кэш
+	int CheckCounter = 0;		//счетчик проверок
 	int randomNumber = 0;
 	int randomNumber2 = 0;
 
