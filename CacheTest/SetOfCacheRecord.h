@@ -12,15 +12,15 @@ class SetOfCacheRecord {
 	int currentcacheRecordsCount;	   //текущее количество записей в группе
 	int cacheRecordsCount;			   //максимальное количество записей в группе
 	deque<CacheRecord*> dequeOfCacheRecords;//Очередь из записей группы
-	thread* threadArray;
+
 	bool recordFound; //запись найдена в группе
 	string tagForSearch;
-	
+
 public:
-	
+
 	SetOfCacheRecord() {
-		cacheSetNumber = ""; currentcacheRecordsCount = 0; cacheRecordsCount = 0; /*arrayOfCacheRecords = 0; */ recordFound = false; tagForSearch = "22"; 
-		
+		cacheSetNumber = ""; currentcacheRecordsCount = 0; cacheRecordsCount = 0; /*arrayOfCacheRecords = 0; */ recordFound = false; tagForSearch = "22";
+
 	}
 	SetOfCacheRecord(string thecacheSetNumber, int thecurrentcacheRecordsCount, int thecacheRecordsCount, bool theRecordFound, string theTagForSearch = ""){
 
@@ -31,23 +31,20 @@ public:
 		/*thread* threadArray = new thread[cacheRecordsCount]; //Массив потоков для поиска тега в группе
 
 		for (int i = 0; i < cacheRecordsCount; i++) {
-			threadArray[i] = std::thread(&SetOfCacheRecord::findInThreadsIndex, this, i);
+		threadArray[i] = std::thread(&SetOfCacheRecord::findInThreadsIndex, this, i);
 		}*/
 	}
 
 	void setCacheSetNumber(string theNumber){ cacheSetNumber = theNumber; }
 	void setCurrentCacheRecordsCount(int theCurrentCacheRecordsCount){ currentcacheRecordsCount = theCurrentCacheRecordsCount; }
-	void setCacheRecordsCount(int theRecordsCount){ 
+	void setCacheRecordsCount(int theRecordsCount){
 		cacheRecordsCount = theRecordsCount;
-	thread* threadArray = new thread[cacheRecordsCount]; //Массив потоков для поиска тега в группе
+		
+		
 
-	for (int i = 0; i <cacheRecordsCount; i++) {
-		threadArray[i] = std::thread(&SetOfCacheRecord::findInThreadsIndex, this, i);
-	}
-	
 	}
 	void setRecordFound(bool theRecordFound){ recordFound = theRecordFound; }
-	
+
 	string getcacheSetNumber(){ return cacheSetNumber; }
 	int getcurrentcacheRecordsCount(){ return currentcacheRecordsCount; }
 	int getcacheRecordsCount(){ return cacheRecordsCount; }
@@ -71,7 +68,7 @@ public:
 			if (dequeOfCacheRecords.front()->getReferBit() == 0)
 			{
 				dequeOfCacheRecords.pop_front();
-				
+
 				CacheRecord* cacheRecord = new CacheRecord(tag, 0);
 				dequeOfCacheRecords.push_back(cacheRecord);
 				return true;
@@ -88,70 +85,56 @@ public:
 		}
 		return false;
 	}
-
-	
-
+		
 	//Функция потока, сравнивающая текущий тег адреса с тегом в группе
-	void findInThreadsIndex(int index) {
-		if (index < currentcacheRecordsCount){
-			if (dequeOfCacheRecords[index]->getTag() == tagForSearch) {
+	void findInThreadsIndex(string tag,int index) {
+		
+			if (dequeOfCacheRecords[index]->getTag() == tag) {
 				recordFound = true;
 				dequeOfCacheRecords[index]->setReferBit(1);
 
 				//cout << "поиск..." << endl;
 			}
-		}
-			
-	}
-	
+			}
+
 	//Функция, проверяющая наличие тега адреса в кэше
 	bool findAddressInCache(string tag) {
 
-		bool result = false;
-		
-		if (dequeOfCacheRecords.size() == 0)
-			return false;
-		tagForSearch = tag;
-		currentcacheRecordsCount = dequeOfCacheRecords.size();
-		/*currentcacheRecordsCount = dequeOfCacheRecords.size();
-		thread* threadArray = new thread[currentcacheRecordsCount]; //Массив потоков для поиска тега в группе
-		
-		for (int i = 0; i < currentcacheRecordsCount; i++) {
-			threadArray[i] = std::thread(&SetOfCacheRecord::findInThreadsIndex,this, tag, i);
-		}
-		for (int i = 0; i < currentcacheRecordsCount; i++) {
-
-			if (threadArray[i].joinable()) {
-				threadArray[i].join();
 				
-			}
-		}
-	
-				
-		
-		result = recordFound;*/ //1thmethod
-
-		/*for (int i = 0; i < dequeOfCacheRecords.size();i++)
+		for (int i = 0; i < dequeOfCacheRecords.size(); i++)
 		if (dequeOfCacheRecords[i]->getTag() == tag) {
 			recordFound = true;
 			dequeOfCacheRecords[i]->setReferBit(1);
 			return true;
-		}*///normal method
+		}
+		return false;
+	}
 
-		for (int i = 0; i < currentcacheRecordsCount - 1; i++) {
+	bool findAddressInCacheWithThreads(string tag) {
+
+		bool result = false;
+
+
+		currentcacheRecordsCount = dequeOfCacheRecords.size();
+		thread* threadArray = new thread[currentcacheRecordsCount]; //Массив потоков для поиска тега в группе
+
+		for (int i = 0; i < currentcacheRecordsCount; i++) {
+			threadArray[i] = std::thread(&SetOfCacheRecord::findInThreadsIndex, this, tag, i);
+		}
+		for (int i = 0; i < currentcacheRecordsCount; i++) {
 
 			if (threadArray[i].joinable()) {
 				threadArray[i].join();
 
 			}
 		}
+						
 		result = recordFound;
 		recordFound = false; //1th method
-		//return false;// normal method
-	    return result; //1th method
-
-		
+		//	return false;// normal method
+		return result; //1th method
 
 	}
+
 };
 
