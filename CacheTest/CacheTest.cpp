@@ -11,8 +11,8 @@
 //ПАРАМЕТРЫ МОДЕЛИ:
 
 #define MAIN_MEMORY_SIZE 1024			//размер основной памяти
-#define CACHE_SIZE 128					//число записей в кэше
-#define CACHE_SETS_COUNT 16			//число групп
+#define CACHE_SIZE 128				//число записей в кэше
+#define CACHE_SETS_COUNT 16			    //число групп
 
 #define SPATIAL_LOCALITY_LENGTH 0		//длина пространственной локальности
 
@@ -25,6 +25,7 @@
 
 #define FUNCTION_CODE_PERCENT 20		//процент кода в функциях
 #define FUNCTION_INSTRUCTION_COUNT 20   //среднее количество инструкций в функции
+
 
 
 
@@ -415,26 +416,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		//Генерирование адресов
 		while (currentAddress < MAIN_MEMORY_SIZE) {
 			//определение вида кода
-
-			if (LOAD_CODE_FROM_FILE) {
-				codefilein.getline(typeOfCode, 7);
-				//cout << typeOfCode << endl;
-				if (typeOfCode[0] == 'L') {
-					linearСode = true;
-					//cout << "Линейный код" << endl;
-				}
-				else if (typeOfCode[0] == 'C') {
-					cyclicСode = true;
-					//cout << "Циклический код" << endl;
-				}
-				else
-				{
-					functionsCode = true;
-					//cout << "Функциональный код" << endl;
-				}
-
-			}
-			else {
+			
 				randomNumber = rand() % 100;
 
 				if (randomNumber < LINEAR_CODE_PERCENT)
@@ -443,7 +425,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					cyclicСode = true;
 				else
 					functionsCode = true;
-			}
+			
 			//если код получился линейным
 			if (linearСode) {
 
